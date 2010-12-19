@@ -99,7 +99,7 @@ int QBrowsCap::getCsvVersion() const {
  *   last 24 hours.
  */
 int QBrowsCap::getLatestVersion() {
-    int lastUpdateTimestamp;
+    int lastUpdateTimestamp = 0;
 
     // Get the last version check time stamp, if any. Similarly, get the
     // latest version from the last version check.
@@ -244,7 +244,7 @@ bool QBrowsCap::connectIndexDB() {
     this->index = QSqlDatabase::addDatabase("QSQLITE", "index");
     this->index.setDatabaseName(this->indexFile);
     if (!this->index.open()) {
-        qCritical() << "Could not open the database:" << this->index.lastError().text();
+        qCritical("Could not open the database: %s.", qPrintable(this->index.lastError().text()));
         return false;
     }
     else
@@ -272,18 +272,18 @@ bool QBrowsCap::buildIndex(bool force, bool ignoreCrawlers, bool ignoreFeedReade
     // Delete existing index, possibly with force, or bail out.
     if (QFile::exists(this->indexFile)) {
         if (!force && this->indexIsUpToDate()) {
-            qWarning() << "Index already exists.";
+            qWarning("Index already exists.");
             return false;
         }
         else if (!QFile::remove(this->indexFile)) {
-            qCritical() << "Existing index could not be deleted";
+            qCritical("Existing index could not be deleted");
             return false;
         }
     }
 
     // Open the database in which the index will be stored.
     if (!this->connectIndexDB()) {
-        qCritical() << "Existing index could not be opened";
+        qCritical("Existing index could not be opened");
         return false;
     }
 
@@ -297,7 +297,7 @@ bool QBrowsCap::buildIndex(bool force, bool ignoreCrawlers, bool ignoreFeedReade
                                            browser_version_minor INTEGER, \
                                            is_mobile INTEGER \
                                            );")) {
-        qCritical() << "Failed to create table:" << query.lastError().text();
+        qCritical("Failed to create table: %s.", qPrintable(query.lastError().text()));
         return false;
     }
 
@@ -316,7 +316,7 @@ bool QBrowsCap::buildIndex(bool force, bool ignoreCrawlers, bool ignoreFeedReade
         int majorVersion = 0, minorVersion = 0;
         int parentMajorVersion = 0, parentMinorVersion = 0;
         bool hasJS, isBanned, isMobile, isCrawler, isFeedReader;
-        bool parentHasJS, parentIsBanned, parentIsMobile, parentIsCrawler, parentIsFeedReader;
+        bool parentHasJS = false, parentIsBanned = false, parentIsMobile = false, parentIsCrawler = false, parentIsFeedReader = false;
         QStringList parts;
 
         int rows = 0;
@@ -466,7 +466,7 @@ void QBrowsCap::downloadFinished(QNetworkReply * reply) {
             QString failureReason = QString::null;
             if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() != 200) {
                 failureReason = "The BrowsCap site is blocking our requests, because we've requested updates >10 times in 24 hours.";
-                qWarning() << failureReason;
+                qWarning("%s.", qPrintable(failureReason));
                 this->versionDownloadResult = false;
                 this->latestVersion = -1;
             }
@@ -483,15 +483,16 @@ void QBrowsCap::downloadFinished(QNetworkReply * reply) {
  * Match the user agent string
  */
 QPair<bool, QStringList> QBrowsCap::matchUserAgent(const QString & userAgent) {
-    static QPair<bool, QStringList> answer;
+    QPair<bool, QStringList> answer;
     static bool indexConnected = false;
 
-    // If
     if (!indexConnected)
         this->connectIndexDB();
 
+    this->cacheMutex.lock();
     if (!this->cache.contains(userAgent)) {
-        answer.second.clear();
+        this->cacheMutex.unlock();
+
         QSqlQuery query(this->index);
         query.prepare("SELECT * FROM browscap WHERE ? GLOB pattern ORDER BY LENGTH(pattern) DESC LIMIT 1");
         query.addBindValue(userAgent);
@@ -506,10 +507,16 @@ QPair<bool, QStringList> QBrowsCap::matchUserAgent(const QString & userAgent) {
             // No match: unidentifiable user agent.
             answer.first = false;
         }
+
+        this->cacheMutex.lock();
         this->cache.insert(userAgent, answer);
+        this->cacheMutex.unlock();
     }
-    else
+    else {
+        this->cacheMutex.unlock();
+
         answer = this->cache.value(userAgent);
+    }
 
     return answer;
 }

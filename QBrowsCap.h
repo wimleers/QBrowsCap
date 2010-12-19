@@ -2,7 +2,7 @@
 #define QBROWSCAP_H
 
 
-#include <QHash>
+#include <QMap>
 #include <QStringList>
 #include <QUrl>
 #include <QNetworkAccessManager>
@@ -17,10 +17,10 @@
 #include <QEventLoop>
 #include <QPair>
 #include <QDateTime>
-
-#ifdef DEBUG
+#include <QMutex>
+#include <QMutexLocker>
+#include <QTextStream>
 #include <QDebug>
-#endif
 
 
 #define QBROWSCAP_CSV_URL "http://browsers.garykeith.com/stream.asp?BrowsCapCSV"
@@ -48,6 +48,8 @@ public:
     int getLatestVersion();
     int getIndexVersion() const;
 
+    int getCacheSize() { QMutexLocker(&this->cacheMutex); return this->cache.size(); }
+
     bool isUpToDate();
     bool downloadUpdate(const QString & targetPath);
     bool indexIsUpToDate() const;
@@ -71,13 +73,18 @@ protected:
 
     // The two speed-up layers: the index is persistent, the cache is not.
     QSqlDatabase index;
-    QHash<QString, QPair<bool, QStringList> > cache;
+    QMap<QString, QPair<bool, QStringList> > cache;
 
     // The browscap.csv file.
     QString csvFile;
 
     // The corresponding index (a SQLite DB).
     QString indexFile;
+
+    // A mutexes is necessary to make the SQLite DB queries and the cache
+    // lookups/insertions thread-safe (all calls are serialized).
+    QMutex queryMutex;
+    QMutex cacheMutex;
 
     void init();
     bool connectIndexDB();

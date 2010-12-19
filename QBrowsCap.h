@@ -23,8 +23,8 @@
 #endif
 
 
-#define QBROWSCAP_CSV_URL "http://localhost/browscap.csv" //http://browsers.garykeith.com/stream.asp?BrowsCapCSV"
-#define QBROWSCAP_VERSION_URL "http://localhost/version" //http://browsers.garykeith.com/versions/version-number.asp"
+#define QBROWSCAP_CSV_URL "http://browsers.garykeith.com/stream.asp?BrowsCapCSV"
+#define QBROWSCAP_VERSION_URL "http://browsers.garykeith.com/versions/version-number.asp"
 #define QBROWSCAP_INDEX_DB_VERSION_PATTERN "___QBROWSCAP_VERSION___"
 #define QBROWSCAP_INDEX_DB_LAST_VERSION_PATTERN "___QBROWSCAP_LAST_VERSION___"
 #define QBROWSCAP_INDEX_DB_LAST_VERSION_CHECK_PATTERN "___QBROWSCAP_LAST_VERSION_CHECK___"

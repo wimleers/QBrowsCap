@@ -17,14 +17,11 @@ SOURCES += TestQBrowsCap.cpp
 
 OTHER_FILES += browscap.csv
 
-# Copy browscap.csv to the build directory when shadow builds are being used.
+# Copy all OTHER_FILES to the build directory when using shadow builds.
 !equals($${PWD}, $${OUT_PWD}) {
-    unix {
-        COPY = cp
+    unix:COPY  = cp
+    win32:COPY = copy /y
+    for(other_file, OTHER_FILES) {
+          QMAKE_PRE_LINK += $${COPY} $${PWD}/$${other_file} $${OUT_PWD}/$${other_file};
     }
-    win32 {
-        COPY = copy /y
-    }
-
-    QMAKE_PRE_LINK = $$COPY $$PWD/browscap.csv $$OUT_PWD/browscap.csv
 }

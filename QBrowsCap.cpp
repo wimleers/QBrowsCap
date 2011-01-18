@@ -482,8 +482,8 @@ void QBrowsCap::downloadFinished(QNetworkReply * reply) {
 /**
  * Match the user agent string
  */
-QPair<bool, QStringList> QBrowsCap::matchUserAgent(const QString & userAgent) {
-    QPair<bool, QStringList> answer;
+QPair<bool, QBrowsCapRecord> QBrowsCap::matchUserAgent(const QString & userAgent) {
+    QPair<bool, QBrowsCapRecord> answer;
     static bool indexConnected = false;
 
     if (!indexConnected)
@@ -494,14 +494,24 @@ QPair<bool, QStringList> QBrowsCap::matchUserAgent(const QString & userAgent) {
         this->cacheMutex.unlock();
 
         QSqlQuery query(this->index);
-        query.prepare("SELECT * FROM browscap WHERE ? GLOB pattern ORDER BY LENGTH(pattern) DESC LIMIT 1");
+        query.prepare("SELECT platform, \
+                              browser_name, browser_version, \
+                              browser_version_major, browser_version_minor, \
+                              is_mobile \
+                       FROM browscap \
+                       WHERE ? GLOB pattern \
+                       ORDER BY LENGTH(pattern) \
+                       DESC LIMIT 1");
         query.addBindValue(userAgent);
         query.exec();
         if (query.next()) {
             answer.first = true;
-            for (int i = 1; i < 7; i++) {
-                answer.second << query.value(i).toString();
-            }
+            answer.second = QBrowsCapRecord(query.value(0).toString(),
+                                            query.value(1).toString(),
+                                            query.value(2).toString(),
+                                            query.value(3).toInt(),
+                                            query.value(4).toInt(),
+                                            query.value(5).toBool());
         }
         else {
             // No match: unidentifiable user agent.
@@ -520,3 +530,12 @@ QPair<bool, QStringList> QBrowsCap::matchUserAgent(const QString & userAgent) {
 
     return answer;
 }
+
+#ifdef DEBUG
+QDebug operator<<(QDebug dbg, const QBrowsCapRecord & record) {
+    dbg.nospace() << record.browser_name.toStdString().c_str() << " " << record.browser_version.toStdString().c_str()
+                  << " (" << record.browser_version_major << ", " << record.browser_version_minor << ")"
+                  << " on " << record.platform.toStdString().c_str();
+    return dbg.nospace();
+}
+#endif

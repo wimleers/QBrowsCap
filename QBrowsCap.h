@@ -20,6 +20,7 @@
 #include <QMutex>
 #include <QMutexLocker>
 #include <QTextStream>
+#include <QMetaType>
 #include <QDebug>
 
 
@@ -30,6 +31,37 @@
 #define QBROWSCAP_INDEX_DB_LAST_VERSION_CHECK_PATTERN "___QBROWSCAP_LAST_VERSION_CHECK___"
 #define QBROWSCAP_MIN_UPDATE_INTERVAL 86400 // Allow only daily updates.
 
+
+struct QBrowsCapRecord {
+    QBrowsCapRecord() {}
+    ~QBrowsCapRecord() {}
+    QBrowsCapRecord(QString platform, QString browser_name,
+                    QString browser_version, quint16 browser_version_major,
+                    quint16 browser_version_minor, bool is_mobile)
+    {
+        this->platform              = platform;
+        this->browser_name          = browser_name;;
+        this->browser_version       = browser_version;
+        this->browser_version_major = browser_version_major;
+        this->browser_version_minor = browser_version_minor;
+        this->is_mobile             = is_mobile;
+    }
+
+    QString platform;
+    QString browser_name;
+    QString browser_version;
+    quint16 browser_version_major;
+    quint16 browser_version_minor;
+    bool    is_mobile;
+};
+
+// Register metatype to allow these types to be streamed in QTests.
+Q_DECLARE_METATYPE(QBrowsCapRecord)
+
+#ifdef DEBUG
+// QDebug() streaming output operators.
+QDebug operator<<(QDebug dbg, const QBrowsCapRecord & record);
+#endif
 
 class QBrowsCap : public QObject {
     Q_OBJECT
@@ -55,7 +87,7 @@ public:
     bool indexIsUpToDate() const;
     bool buildIndex(bool force = false, bool ignoreCrawlers = true, bool ignorFeedReaders = true, bool ignoreBanned = true, bool ignoreNoJS = true);
 
-    QPair<bool, QStringList> matchUserAgent(const QString & userAgent);
+    QPair<bool, QBrowsCapRecord> matchUserAgent(const QString & userAgent);
 
 protected slots:
     void downloadFinished(QNetworkReply * reply);
@@ -73,7 +105,7 @@ protected:
 
     // The two speed-up layers: the index is persistent, the cache is not.
     QSqlDatabase index;
-    QMap<QString, QPair<bool, QStringList> > cache;
+    QMap<QString, QPair<bool, QBrowsCapRecord> > cache;
 
     // The browscap.csv file.
     QString csvFile;
@@ -81,7 +113,7 @@ protected:
     // The corresponding index (a SQLite DB).
     QString indexFile;
 
-    // A mutexes is necessary to make the SQLite DB queries and the cache
+    // Mutexes are necessary to make the SQLite DB queries and the cache
     // lookups/insertions thread-safe (all calls are serialized).
     QMutex queryMutex;
     QMutex cacheMutex;

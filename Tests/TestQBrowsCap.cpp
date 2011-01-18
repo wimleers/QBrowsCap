@@ -32,8 +32,8 @@ void TestQBrowsCap::matchUserAgent_data() {
     QTest::addColumn<QString>("platform");
     QTest::addColumn<QString>("browser_name");
     QTest::addColumn<QString>("browser_version");
-    QTest::addColumn<int>("browser_version_major");
-    QTest::addColumn<int>("browser_version_minor");
+    QTest::addColumn<quint16>("browser_version_major");
+    QTest::addColumn<quint16>("browser_version_minor");
     QTest::addColumn<bool>("is_mobile");
 
     QTest::newRow("Chrome 8.0 on Mac OS X")
@@ -42,8 +42,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "MacOSX"
             << "Chrome"
             << "8.0"
-            << 8
-            << 0
+            << (quint16) 8
+            << (quint16) 0
             << false;
     QTest::newRow("Internet Explorer 8.0 on Windows XP")
             << "Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 5.1; Trident/4.0; WinTSI 05.11.2009)"
@@ -51,8 +51,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "WinXP"
             << "IE"
             << "8.0"
-            << 8
-            << 0
+            << (quint16) 8
+            << (quint16) 0
             << false;
     QTest::newRow("Firefox 3.5 on Mac OS X")
             << "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.6; en-US; rv:1.9.1.13) Gecko/20100914 Firefox/3.5.13"
@@ -60,8 +60,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "MacOSX"
             << "Firefox"
             << "3.5"
-            << 3
-            << 5
+            << (quint16) 3
+            << (quint16) 5
             << false;
     QTest::newRow("Firefox 3.6 on Windows 7")
             << "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US; rv:1.9.2.10) Gecko/20100914 Firefox/3.6.10"
@@ -69,8 +69,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "Win7"
             << "Firefox"
             << "3.6"
-            << 3
-            << 6
+            << (quint16) 3
+            << (quint16) 6
             << false;
     QTest::newRow("Netscape 8.1 on Windows XP")
             << "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.7.5) Gecko/20060127 Netscape/8.1"
@@ -78,8 +78,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "WinXP"
             << "Netscape"
             << "8.1"
-            << 8
-            << 1
+            << (quint16) 8
+            << (quint16) 1
             << false;
     QTest::newRow("Chrome 6.0 on Windows 7")
             << "Mozilla/5.0 (Windows; U; Windows NT 6.1; en-US) AppleWebKit/534.3 (KHTML, like Gecko) Chrome/6.0.472.63 Safari/534.3"
@@ -87,8 +87,8 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "Win7"
             << "Chrome"
             << "6.0"
-            << 6
-            << 0
+            << (quint16) 6
+            << (quint16) 0
             << false;
 
     QTest::newRow("Safari on iPhone")
@@ -97,36 +97,34 @@ void TestQBrowsCap::matchUserAgent_data() {
             << "iPhone OSX"
             << "iPhone"
             << "4.2"
-            << 4
-            << 2
+            << (quint16) 4
+            << (quint16) 2
             << true;
 
     QTest::newRow("Non-existing browser")
             << "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10_6_5; en-US) AppleWebKit/534.10 (KHTML, like Gecko) NON/10.0"
             << false
-            << "" << "" << "" << -1 << -1; // Dummy values.
+            << "" << "" << "" << (quint16) -1 << (quint16) -1; // Dummy values.
 
 }
 
 void TestQBrowsCap::matchUserAgent() {
-    static QPair<bool, QStringList> result;
-    static QStringList details;
-    static QTime timer;
+    static QPair<bool, QBrowsCapRecord> result;
+    static QBrowsCapRecord details;
 
     QFETCH(QString, userAgent);
     QFETCH(bool, success);
 
-    timer.start();
     result = this->browsCap.matchUserAgent(userAgent);
     details = result.second;
 
     QCOMPARE(result.first, success);
     if (success) {
-        QTEST(details[0], "platform");
-        QTEST(details[1], "browser_name");
-        QTEST(details[2], "browser_version");
-        QTEST(details[3].toInt(), "browser_version_major");
-        QTEST(details[4].toInt(), "browser_version_minor");
-        QTEST(QString(details[5]).compare("true") == 0, "is_mobile");
+        QTEST(details.platform, "platform");
+        QTEST(details.browser_name, "browser_name");
+        QTEST(details.browser_version, "browser_version");
+        QTEST(details.browser_version_major, "browser_version_major");
+        QTEST(details.browser_version_minor, "browser_version_minor");
+        QTEST(details.is_mobile, "is_mobile");
     }
 }

@@ -19,9 +19,9 @@ OTHER_FILES += browscap.csv
 
 # Copy all OTHER_FILES to the build directory when using shadow builds.
 !equals($${PWD}, $${OUT_PWD}) {
-    unix:COPY  = cp
+    unix:COPY  = cp -f
     win32:COPY = copy /y
     for(other_file, OTHER_FILES) {
-          QMAKE_PRE_LINK += $${COPY} $${PWD}/$${other_file} $${OUT_PWD}/$${other_file};
+          QMAKE_PRE_LINK += $${COPY} $${PWD}/$${other_file} $${OUT_PWD}/$$basename(other_file);
     }
 }

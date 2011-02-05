@@ -81,6 +81,7 @@ public:
     int getIndexVersion() const;
 
     int getCacheSize() { QMutexLocker(&this->cacheMutex); return this->cache.size(); }
+    void resetCache() { QMutexLocker(&this->cacheMutex); this->cache.clear(); }
 
     bool isUpToDate();
     bool downloadUpdate(const QString & targetPath);

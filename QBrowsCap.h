@@ -105,7 +105,7 @@ protected:
     int latestVersion;
 
     // The two speed-up layers: the index is persistent, the cache is not.
-    QSqlDatabase index;
+    //QSqlDatabase index;
     QMap<QString, QPair<bool, QBrowsCapRecord> > cache;
 
     // The browscap.csv file.

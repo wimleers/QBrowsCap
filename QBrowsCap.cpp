@@ -241,10 +241,10 @@ bool QBrowsCap::connectIndexDB() {
     if (QSqlDatabase::connectionNames().contains("index"))
         return true;
 
-    this->index = QSqlDatabase::addDatabase("QSQLITE", "index");
-    this->index.setDatabaseName(this->indexFile);
-    if (!this->index.open()) {
-        qCritical("Could not open the database: %s.", qPrintable(this->index.lastError().text()));
+    QSqlDatabase db = QSqlDatabase::addDatabase("QSQLITE", "index");
+    db.setDatabaseName(this->indexFile);
+    if (!db.open()) {
+        qCritical("Could not open the database: %s.", qPrintable(db.lastError().text()));
         return false;
     }
     else
@@ -288,7 +288,8 @@ bool QBrowsCap::buildIndex(bool force, bool ignoreCrawlers, bool ignoreFeedReade
     }
 
     // Create the schema.
-    QSqlQuery query(this->index);
+    QSqlDatabase index = QSqlDatabase::database("index");
+    QSqlQuery query(index);
     if (!query.exec("CREATE TABLE browscap(pattern TEXT PRIMARY KEY, \
                                            platform TEXT, \
                                            browser_name TEXT, \
@@ -493,7 +494,8 @@ QPair<bool, QBrowsCapRecord> QBrowsCap::matchUserAgent(const QString & userAgent
     if (!this->cache.contains(userAgent)) {
         this->cacheMutex.unlock();
 
-        QSqlQuery query(this->index);
+        QSqlDatabase index = QSqlDatabase::database("index");
+        QSqlQuery query(index);
         query.prepare("SELECT platform, \
                               browser_name, browser_version, \
                               browser_version_major, browser_version_minor, \
